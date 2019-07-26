@@ -30,7 +30,6 @@ def train_mnist(device, model, dataloaders, num_epochs):
             inputs = inputs.to(device)
             labels = labels.to(device)
 
-            inputs = inputs.reshape(inputs.size(0), -1)
             with torch.no_grad():
                 best_outputs = model(inputs)
                 loss = final_loss_fn(best_outputs[layer_names[-1]], labels)
@@ -75,7 +74,6 @@ def train_mnist(device, model, dataloaders, num_epochs):
                     loss = loss_fn(layer_out, best_outputs[curr_layer])
                     loss.backward()
                     output_optim.step()
-                    # if loss.item() < 1e-2:
                     layer_optimisers[curr_layer].step()
                     output_optim.zero_grad()
                     layer_optimisers[curr_layer].zero_grad()
@@ -86,8 +84,6 @@ def train_mnist(device, model, dataloaders, num_epochs):
                     last_loss = loss.item()
 
                 best_outputs[prev_layer].requires_grad_(False)
-
-                # print(f"{curr_layer} done, Loss = {loss.item()}")
                 layer_idx -= 1
 
             curr_layer = layer_names[layer_idx]

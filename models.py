@@ -1,6 +1,11 @@
 import torch.nn as nn
 
 
+class Flatten(nn.Module):
+    def forward(self, x):
+        return x.reshape(x.size(0), -1)
+
+
 class SimpleConv(nn.Module):
     def __init__(self):
         super(SimpleConv, self).__init__()
@@ -8,39 +13,43 @@ class SimpleConv(nn.Module):
             nn.Conv2d(in_channels=1, out_channels=64, kernel_size=(3, 3),
                       stride=(1, 1), padding=(1, 1), bias=False),
             nn.BatchNorm2d(num_features=64),
-            nn.ReLU(),
+            nn.ReLU()
+        )
+        self.conv2 = nn.Sequential(
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=(3, 3),
                       stride=(1, 1), padding=(1, 1), bias=False),
             nn.BatchNorm2d(num_features=64),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
         )
-        self.conv2 = nn.Sequential(
+        self.conv3 = nn.Sequential(
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3, 3),
                       stride=(1, 1), padding=(1, 1), bias=False),
             nn.BatchNorm2d(num_features=128),
-            nn.ReLU(),
+            nn.ReLU()
+        )
+        self.conv4 = nn.Sequential(
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3),
                       stride=(1, 1), padding=(1, 1), bias=False),
             nn.BatchNorm2d(num_features=128),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
         )
-        self.fc = nn.Linear(in_features=128 * 7 * 7, out_features=10)
+        self.fc = nn.Sequential(
+            Flatten(),
+            nn.Linear(in_features=128 * 7 * 7, out_features=10)
+        )
+
         self._initialize_weights()
 
     def forward(self, x):
         outputs = dict()
+        last_name = None
         for name, layer in self.named_children():
-            if "fc" in name:
-                x = x.reshape(x.size(0), -1)
             x = layer(x)
             outputs[name] = x
-
-        for name in outputs:
-            outputs[name].retain_grad()
-
-        return outputs
+            last_name = name
+        return outputs if self.training else outputs[last_name]
 
     def _initialize_weights(self):
         for m in self.modules():
@@ -60,6 +69,7 @@ class SimpleMLP(nn.Module):
     def __init__(self):
         super(SimpleMLP, self).__init__()
         self.fc1 = nn.Sequential(
+            Flatten(),
             nn.Linear(in_features=28 * 28, out_features=512),
             nn.ReLU(),
             # nn.Dropout()

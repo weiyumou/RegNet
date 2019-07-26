@@ -14,7 +14,6 @@ def eval_mnist(device, model, dataloader):
         inputs = inputs.to(device)
         labels = labels.to(device)
 
-        inputs = inputs.reshape(inputs.size(0), -1)
         with torch.no_grad():
             outputs = model(inputs)
             loss = criterion(outputs, labels)

@@ -35,5 +35,6 @@ dataloaders = {"train": DataLoader(Subset(mnist_train, train_indices), shuffle=T
                "val": DataLoader(Subset(mnist_train, val_indices), shuffle=False, batch_size=128),
                "test": DataLoader(mnist_test, shuffle=False, batch_size=128)}
 
-model = models.SimpleMLP()
+# model = models.SimpleMLP()
+model = models.SimpleConv()
 train.train_mnist(device, model, dataloaders, 10)
