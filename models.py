@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class Flatten(nn.Module):
@@ -98,12 +99,11 @@ class VGGConvBlock(nn.Module):
         self.conv = nn.Conv2d(in_channels=num_in_channels, out_channels=num_out_channels,
                               kernel_size=3, stride=1, padding=1, bias=False)
         self.bn = nn.BatchNorm2d(num_features=num_out_channels)
-        self.relu = nn.ReLU()
 
     def forward(self, x):
         for _, layer in self.named_children():
             x = layer(x)
-        return x
+        return F.relu(x)
 
 
 class VGGMaxConvBlock(VGGConvBlock):
@@ -111,9 +111,6 @@ class VGGMaxConvBlock(VGGConvBlock):
     def __init__(self, num_in_channels, num_out_channels):
         super().__init__(num_in_channels, num_out_channels)
         self.maxpool = nn.MaxPool2d(kernel_size=2)
-
-    def forward(self, x):
-        return self.maxpool(super().forward(x))
 
 
 class VGG(nn.Module):
