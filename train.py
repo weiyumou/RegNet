@@ -42,7 +42,7 @@ def train_mnist(device, model, dataloaders, num_epochs):
             output_optim = optim.Adam([best_outputs[curr_layer]], lr=1)
 
             no_improve, last_loss = 0, 0
-            while no_improve < 10:
+            while no_improve < 10 and loss.item() > 1e-1:
                 loss = final_loss_fn(best_outputs[curr_layer], labels)
                 loss.backward()
                 output_optim.step()
