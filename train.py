@@ -9,7 +9,7 @@ import utils
 import torch.nn.functional as F
 
 
-def train_mnist(device, model, dataloaders, dataset_sizes, num_epochs, patience=5, threshold=1e-4):
+def train_mnist(device, model, dataloaders, dataset_sizes, num_epochs, patience=5, threshold=4e-2):
     writer = SummaryWriter()
 
     model = model.to(device)
@@ -70,6 +70,9 @@ def train_mnist(device, model, dataloaders, dataset_sizes, num_epochs, patience=
                 no_improve, last_loss = 0, 0
                 while no_improve < patience:
                     layer_out = getattr(model, curr_layer)(F.relu(best_outputs[prev_layer]))
+                    # preds = torch.argmax(layer_out, dim=1)
+                    # corrects = torch.sum(preds == labels).item()
+                    # accuracy = corrects / inputs.size(0)
                     loss = loss_fn(layer_out, best_outputs[curr_layer])
                     loss.backward()
                     output_optim.step()
@@ -101,14 +104,15 @@ def train_mnist(device, model, dataloaders, dataset_sizes, num_epochs, patience=
                     no_improve = 0
                 last_loss = loss.item()
 
-        epoch_loss = running_loss / dataset_sizes["train"]
-        utils.logger.info(f"Epoch {epoch}: Train Loss = {epoch_loss}")
+        # epoch_loss = running_loss / dataset_sizes["train"]
 
-        val_accuracy, val_loss = evaluation.eval_mnist(device, model, dataloaders["val"], dataset_sizes["val"])
-        utils.logger.info(f"Epoch {epoch}: Val Accuracy = {val_accuracy}, Val Loss = {val_loss}")
+        accuracies = dict()
+        losses = dict()
+        for phase in ["train", "val", "test"]:
+            accuracy, loss = evaluation.eval_mnist(device, model, dataloaders[phase], dataset_sizes[phase])
+            utils.logger.info(f"Epoch {epoch}: {phase} accuracy = {accuracy}, {phase} loss = {loss}")
+            accuracies[phase] = accuracy
+            losses[phase] = loss
 
-        test_accuracy, test_loss = evaluation.eval_mnist(device, model, dataloaders["test"], dataset_sizes["test"])
-        utils.logger.info(f"Epoch {epoch}: Test Accuracy = {test_accuracy}, Test Loss = {test_loss}")
-
-        writer.add_scalars("Loss", {"Train_Loss": epoch_loss, "Val_Loss": val_loss, "Test_Loss": test_loss}, epoch)
-        writer.add_scalars("Accuracy", {"Val_Accuracy": val_accuracy, "Test_Accuracy": test_accuracy}, epoch)
+        writer.add_scalars("Loss", losses, epoch)
+        writer.add_scalars("Accuracy", accuracies, epoch)

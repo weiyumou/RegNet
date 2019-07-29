@@ -18,26 +18,27 @@ torch.backends.cudnn.benchmark = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 input_transforms = transforms.Compose([transforms.ToTensor()])
 
-# mnist_train = dset.MNIST(root="datasets/mnist",
-#                          train=True,
-#                          download=True,
-#                          transform=input_transforms)
-# mnist_test = dset.MNIST(root="datasets/mnist",
-#                         train=False,
-#                         download=True,
-#                         transform=input_transforms)
+mnist_train = dset.MNIST(root="datasets/mnist",
+                         train=True,
+                         download=True,
+                         transform=input_transforms)
+mnist_test = dset.MNIST(root="datasets/mnist",
+                        train=False,
+                        download=True,
+                        transform=input_transforms)
 
-cifar_train = dset.CIFAR10(root="datasets/cifar",
-                           train=True,
-                           transform=input_transforms,
-                           download=True)
+# cifar_train = dset.CIFAR10(root="datasets/cifar",
+#                            train=True,
+#                            transform=input_transforms,
+#                            download=True)
+#
+# cifar_test = dset.CIFAR10(root="datasets/cifar",
+#                           train=False,
+#                           transform=input_transforms,
+#                           download=True)
 
-cifar_test = dset.CIFAR10(root="datasets/cifar",
-                          train=False,
-                          transform=input_transforms,
-                          download=True)
-train_set = cifar_train
-test_set = cifar_test
+train_set = mnist_train
+test_set = mnist_test
 
 indices = list(range(len(train_set)))
 train_indices = indices[:int(len(train_set) * 0.9)]
@@ -54,9 +55,9 @@ dataset_sizes = {
     "val": len(val_indices),
     "test": len(test_set)
 }
-# model = models.SimpleMLP()
+model = models.SimpleMLP()
 # model = models.SimpleConv()
-model = models.VGG(train_set[0][0].size(0), len(train_set.classes))
+# model = models.VGG(train_set[0][0].size(0), len(train_set.classes))
 # if torch.cuda.device_count() > 1:
 #     model = torch.nn.DataParallel(model)
 train.train_mnist(device, model, dataloaders, dataset_sizes, 30)
