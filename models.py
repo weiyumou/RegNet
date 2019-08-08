@@ -160,3 +160,21 @@ class VGG(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
+
+
+class LogisticRegressor(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc = nn.Sequential(
+            Flatten(),
+            nn.Linear(in_features=28*28, out_features=10)
+        )
+
+    def forward(self, x):
+        outputs = dict()
+        last_name = None
+        for name, layer in self.named_children():
+            x = layer(x)
+            outputs[name] = x
+            last_name = name
+        return outputs if self.training else outputs[last_name]

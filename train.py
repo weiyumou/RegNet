@@ -7,9 +7,10 @@ from torch.utils.tensorboard import SummaryWriter
 import evaluation
 import utils
 import torch.nn.functional as F
+import copy
 
 
-def train_mnist(device, model, dataloaders, dataset_sizes, num_epochs, patience=5, threshold=4e-2):
+def train_mnist(device, model, dataloaders, dataset_sizes, num_epochs, patience=2, threshold=1e-2):
     writer = SummaryWriter()
 
     model = model.to(device)
@@ -23,6 +24,7 @@ def train_mnist(device, model, dataloaders, dataset_sizes, num_epochs, patience=
     final_loss_fn = nn.CrossEntropyLoss()
     loss_fn = nn.MSELoss()
 
+    count = 0
     for epoch in range(num_epochs):
         running_loss = 0.0
         model.train()
@@ -46,49 +48,53 @@ def train_mnist(device, model, dataloaders, dataset_sizes, num_epochs, patience=
                 loss.backward()
                 output_optim.step()
                 output_optim.zero_grad()
-                if abs(loss.item() - last_loss) < threshold:
+                if abs(loss.item() - last_loss) < 1e-1:
                     no_improve += 1
                 else:
                     no_improve = 0
                 last_loss = loss.item()
 
+            preds = torch.argmax(best_outputs[curr_layer], dim=1)
+            corrects = torch.sum(preds == labels).item()
+            accuracy = corrects / inputs.size(0)
+            writer.add_scalar("Batch_accuracy", accuracy, count)
+
             best_outputs[curr_layer].requires_grad_(False)
+            count += 1
 
             # Learn all layers by regressing to the target output
             # Adjust the weight for the current layer and generates
             # target for the previous layer
 
             layer_idx = len(layer_names) - 1
-            while layer_idx > 0:
-                curr_layer = layer_names[layer_idx]
-                prev_layer = layer_names[layer_idx - 1]
-
-                best_outputs[prev_layer].requires_grad_()
-                output_optim = optim.Adam([best_outputs[prev_layer]], lr=1e-3)
-                layer_optimisers[curr_layer].zero_grad()
-
-                no_improve, last_loss = 0, 0
-                while no_improve < patience:
-                    layer_out = getattr(model, curr_layer)(F.relu(best_outputs[prev_layer]))
-                    # preds = torch.argmax(layer_out, dim=1)
-                    # corrects = torch.sum(preds == labels).item()
-                    # accuracy = corrects / inputs.size(0)
-                    loss = loss_fn(layer_out, best_outputs[curr_layer])
-                    loss.backward()
-                    output_optim.step()
-                    layer_optimisers[curr_layer].step()
-                    output_optim.zero_grad()
-                    layer_optimisers[curr_layer].zero_grad()
-                    if abs(loss.item() - last_loss) < threshold:
-                        no_improve += 1
-                    else:
-                        no_improve = 0
-                    last_loss = loss.item()
-
-                with torch.no_grad():
-                    best_outputs[prev_layer] = F.relu(best_outputs[prev_layer])
-                layer_idx -= 1
-
+        #     while layer_idx > 0:
+        #         curr_layer = layer_names[layer_idx]
+        #         prev_layer = layer_names[layer_idx - 1]
+        #
+        #         best_outputs[prev_layer].requires_grad_()
+        #         output_optim = optim.Adam([best_outputs[prev_layer]], lr=1)
+        #         layer_optimisers[curr_layer].zero_grad()
+        #
+        #         # no_improve, last_loss = 0, 0
+        #         # while no_improve < patience:
+        #         layer_out = getattr(model, curr_layer)(F.relu(best_outputs[prev_layer]))
+        #
+        #         loss = loss_fn(layer_out, best_outputs[curr_layer])
+        #         loss.backward()
+        #         output_optim.step()
+        #         layer_optimisers[curr_layer].step()
+        #         output_optim.zero_grad()
+        #         layer_optimisers[curr_layer].zero_grad()
+        #             # if abs(loss.item() - last_loss) < threshold:
+        #             #     no_improve += 1
+        #             # else:
+        #             #     no_improve = 0
+        #             # last_loss = loss.item()
+        #
+        #         with torch.no_grad():
+        #             best_outputs[prev_layer] = F.relu(best_outputs[prev_layer])
+        #         layer_idx -= 1
+        #
             curr_layer = layer_names[layer_idx]
             layer_optimisers[curr_layer].zero_grad()
             no_improve, last_loss = 0, 0
@@ -104,7 +110,7 @@ def train_mnist(device, model, dataloaders, dataset_sizes, num_epochs, patience=
                     no_improve = 0
                 last_loss = loss.item()
 
-        # epoch_loss = running_loss / dataset_sizes["train"]
+        # # epoch_loss = running_loss / dataset_sizes["train"]
 
         accuracies = dict()
         losses = dict()

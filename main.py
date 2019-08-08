@@ -18,14 +18,23 @@ torch.backends.cudnn.benchmark = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 input_transforms = transforms.Compose([transforms.ToTensor()])
 
-mnist_train = dset.MNIST(root="datasets/mnist",
-                         train=True,
-                         download=True,
-                         transform=input_transforms)
-mnist_test = dset.MNIST(root="datasets/mnist",
-                        train=False,
-                        download=True,
-                        transform=input_transforms)
+mnist_train = dset.FashionMNIST(root="datasets/fashion_mnist",
+                                train=True,
+                                download=True,
+                                transform=input_transforms)
+mnist_test = dset.FashionMNIST(root="datasets/fashion_mnist",
+                               train=False,
+                               download=True,
+                               transform=input_transforms)
+
+# mnist_train = dset.MNIST(root="datasets/mnist",
+#                          train=True,
+#                          download=True,
+#                          transform=input_transforms)
+# mnist_test = dset.MNIST(root="datasets/mnist",
+#                         train=False,
+#                         download=True,
+#                         transform=input_transforms)
 
 # cifar_train = dset.CIFAR10(root="datasets/cifar",
 #                            train=True,
@@ -55,7 +64,7 @@ dataset_sizes = {
     "val": len(val_indices),
     "test": len(test_set)
 }
-model = models.SimpleMLP()
+model = models.LogisticRegressor()
 # model = models.SimpleConv()
 # model = models.VGG(train_set[0][0].size(0), len(train_set.classes))
 # if torch.cuda.device_count() > 1:
